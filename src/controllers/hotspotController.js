@@ -29,4 +29,17 @@ exports.getHotspotInfo = async (req, res) => {
     }
 };
 
-// 2. 다이스/테스트 로직도 비슷하게 exports 추가 가능...
+// 2. API 테스트용 로직
+exports.apitest = async (req, res) => { 
+    const placeName = req.params.placeName || "강남역";
+    const url = `http://openapi.seoul.go.kr:8088/${KEY}/json/citydata/1/1/${encodeURIComponent(placeName)}`;
+    const response = await axios.get(url);
+    const cityData = response.data?.CITYDATA;
+
+    if (cityData) {
+        res.json(cityData);
+    } else {
+        res.status(404).json({ message: "데이터를 찾을 수 없습니다." });
+    }  
+}
+
