@@ -148,17 +148,30 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
 exports.getNearbyHotspots = async (req, res) => {
     try {
         // 프론트에서 보낸 유저의 위도, 경도
-        const { userLat, userLng } = req.query;
-
+        const { userLat, userLng, distLimit } = req.query;
+        const limit = parseFloat(distLimit) || 3.0;
         if (!userLat || !userLng) {
             return res.status(400).json({ message: "위치 정보가 필요합니다." });
         }
+ 
+        // 1. [핵심] API 호출 전, 거리 계산으로 후보군(candidates) 먼저 추출
+        const candidates = seoulHotspots
+            .map(place => ({
+                ...place,
+                distance: getDistance(parseFloat(userLat), parseFloat(userLng), place.lat, place.lng)
+            }))
+            .filter(place => place.distance <= limit) // 유저가 설정한 거리 내 장소만 필터링
+            .sort((a, b) => a.distance - b.distance)  // 가까운 순 정렬
+            .slice(0, 10); // 성능을 위해 상위 10개 정도로 제한 (선택 사항)
 
-        // 모든 장소에 대해 API를 호출 (병렬 처리로 속도 향상)
-        const requests = seoulHotspots.map(place => 
+        if (candidates.length === 0) {
+            return res.json({ count: 0, recommendations: [] });
+        }
+
+        // 2. 필터링된 후보들에 대해서만 API 요청 생성
+        const requests = candidates.map(place => 
             axios.get(`http://openapi.seoul.go.kr:8088/${KEY}/json/citydata/1/1/${encodeURIComponent(place.name)}`)
         );
-
         const responses = await Promise.all(requests);
         
         // 데이터 정제 및 필터링
@@ -168,19 +181,19 @@ exports.getNearbyHotspots = async (req, res) => {
                 if (!cityData) return null;
 
                 const congestionInfo = cityData.LIVE_PPLTN_STTS?.[0] || {};
-                const distance = getDistance(userLat, userLng, seoulHotspots[index].lat, seoulHotspots[index].lng);
+                const distance = getDistance(parseFloat(userLat),parseFloat(userLng), candidates[index].lat, candidates[index].lng);
 
                 return {
                     장소: cityData.AREA_NM,
                     혼잡도: congestionInfo.AREA_CONGEST_LVL || "데이터 없음",
                     상세메시지: congestionInfo.AREA_CONGEST_MSG || "",
                     거리: distance.toFixed(2), // 소수점 2자리까지
-                    좌표: { lat: seoulHotspots[index].lat, lng: seoulHotspots[index].lng }
+                    좌표: { lat: candidates[index].lat, lng: candidates[index].lng }
                 };
             })
             .filter(place => place !== null && (place.혼잡도 === "여유" || place.혼잡도 === "보통")) // 여유/보통만 필터링
             .sort((a, b) => a.거리 - b.거리) // 가까운 순 정렬
-            .slice(0, 3); // 상위 3개 선정
+            .slice(0, 10); // 상위 10개 선정
 
         res.json({
             count: filteredPlaces.length,

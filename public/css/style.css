@@ -1,0 +1,29 @@
+/* style.css 수정 */
+#recommendationList {
+    pointer-events: auto;
+    display: flex;
+    flex-wrap: nowrap;      /* 줄바꿈 방지 */
+    gap: 15px;
+    overflow-x: auto;       /* 가로 스크롤 허용 */
+    padding: 10px 20px 20px 20px;
+    width: 100%;
+    box-sizing: border-box;
+
+    /* 스크롤바 디자인 숨기기 */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    /* 텍스트 하이라이트 방지 및 스크롤 감도 개선 */
+    user-select: none;           /* 글씨가 선택되는 현상 방지 (핵심!) */
+    -webkit-user-drag: none;     /* 요소 드래그 방지 */
+    scroll-snap-type: x mandatory; /* 카드 단위로 딱딱 끊겨서 멈추게 함 (선택) */
+    -webkit-overflow-scrolling: touch; /* 모바일에서 부드러운 스크롤 지원 */
+}
+
+/* 개별 카드에도 snap 설정 추가 (선택) */
+.place-card {
+    flex: 0 0 auto;
+    width: 280px;
+    scroll-snap-align: start; /* 스크롤 시 카드가 시작 지점에 딱 붙음 */
+    /* ... 기존 코드 ... */
+}
