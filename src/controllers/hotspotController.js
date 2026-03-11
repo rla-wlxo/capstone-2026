@@ -148,13 +148,13 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
 exports.getNearbyHotspots = async (req, res) => {
     try {
         // 프론트에서 보낸 유저의 위도, 경도
-        const { userLat, userLng, distLimit } = req.query;
+        const { userLat, userLng, distLimit, congestionLimit} = req.query;
         const limit = parseFloat(distLimit) || 3.0;
+        const congestionThreshold = congestionLimit || "보통"; // 혼잡도 기준 (예: "여유", "보통", "약간 붐빔")
         if (!userLat || !userLng) {
             return res.status(400).json({ message: "위치 정보가 필요합니다." });
         }
- 
-        // 1. [핵심] API 호출 전, 거리 계산으로 후보군(candidates) 먼저 추출
+        
         const candidates = seoulHotspots
             .map(place => ({
                 ...place,
@@ -164,6 +164,8 @@ exports.getNearbyHotspots = async (req, res) => {
             .sort((a, b) => a.distance - b.distance)  // 가까운 순 정렬
             .slice(0, 10); // 성능을 위해 상위 10개 정도로 제한 (선택 사항)
 
+        console.log(`🔍 후보군 추출 완료: ${candidates.length}곳 (거리 기준)`);
+    
         if (candidates.length === 0) {
             return res.json({ count: 0, recommendations: [] });
         }
@@ -191,7 +193,7 @@ exports.getNearbyHotspots = async (req, res) => {
                     좌표: { lat: candidates[index].lat, lng: candidates[index].lng }
                 };
             })
-            .filter(place => place !== null && (place.혼잡도 === "여유" || place.혼잡도 === "보통")) // 여유/보통만 필터링
+            .filter(place => place !== null && (place.혼잡도 === congestionThreshold || congestionThreshold === "전체")) 
             .sort((a, b) => a.거리 - b.거리) // 가까운 순 정렬
             .slice(0, 10); // 상위 10개 선정
 

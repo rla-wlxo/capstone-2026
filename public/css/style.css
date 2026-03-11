@@ -20,6 +20,11 @@
     -webkit-overflow-scrolling: touch; /* 모바일에서 부드러운 스크롤 지원 */
 }
 
+[class*="congest-약간"][class*="붐빔"] { 
+    color: #afff0e; 
+    font-weight: bold; 
+}
+
 /* 개별 카드에도 snap 설정 추가 (선택) */
 .place-card {
     flex: 0 0 auto;

@@ -90,8 +90,9 @@
         .place-card:hover { transform: translateY(-5px); }
         .place-card h3 { margin: 0 0 5px 0; color: #333; }
         
-        .congest-여유 { color: #28a745; font-weight: bold; }
-        .congest-보통 { color: #ffc107; font-weight: bold; }
+        .congest-여유 { color: #21d5db; font-weight: bold; }
+        .congest-보통 { color: #28a745; font-weight: bold; }
+        .congest-약간붐빔 { color: #e5e214; font-weight: bold; };
     </style>
 </head>
 <body>
@@ -109,8 +110,14 @@
                 <option value="1">1km 이내</option>
                 <option value="5" selected>5km 이내</option>
                 <option value="10">10km 이내</option>
-                <option value="15">15km 이내</option>
                 <option value="20">20km 이내</option>
+                <option value="30">30km 이내</option>
+                <option value="40">40km 이내</option>
+            </select>
+            <select id="congestionSelect">
+                <option value="여유" selected>여유로운 곳</option>
+                <option value="보통">보통인 곳</option>
+                <option value="약간 붐빔">약간 붐비는 곳</option>
             </select>
             <button id="recommendBtn">추천받기</button>
         </div>
@@ -119,8 +126,6 @@
             </div>
 
     </div>
-    <script src="/js/horizontalScroll.js"></script>
-    <script src="/js/main.js"></script>
-
+    <script type="module" src="/js/main.js"></script>
 </body>
 </html>
