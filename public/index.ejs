@@ -1,26 +1,15 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=<%= kakaoKey %>&autoload=false"></script>
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=<%= kakaoKey %>&autoload=false&libraries=services"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/style.css">
-    <title>Seoul Random Dice - 여유로운 핫플 지도</title>
+    <title>서울 혼잡도</title>
     <style>
-        /* 1. 전체 레이아웃 설정 */
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Pretendard', sans-serif; overflow: hidden; }
+        #map { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* 2. 지도를 배경으로 꽉 채움 */
-        #map {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1; /* 가장 아래 레이어 */
-        }
-
-        /* 3. 지도 위에 뜰 UI 레이어 (클릭 통과 설정) */
         .ui-overlay {
             position: absolute;
             top: 0;
@@ -28,104 +17,81 @@
             width: 100%;
             height: 100%;
             z-index: 2;
-            pointer-events: none; /* 빈 공간은 지도가 클릭되게 함 */
+            pointer-events: none; /* 지도가 클릭되도록 설정 */
+            padding: 20px;
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 20px;
-            box-sizing: border-box;
         }
 
-        /* 4. 상단 컨트롤 패널 */
-        .search-container {
-            pointer-events: auto; /* 버튼 등은 클릭 가능하게 */
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            max-width: 350px;
-        }
-
-        .search-container h2 { margin: 0 0 10px 0; font-size: 1.2rem; }
-
-        select, button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            font-size: 1rem;
-        }
-
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        /* 5. 하단 결과 카드 리스트 (가로 스크롤) */
-        #recommendationList {
+        /* 내부에 들어가는 검색창과 리스트는 다시 클릭 가능하게 설정 */
+        .search-container, #recommendationList {
             pointer-events: auto;
-            display: flex;
-            gap: 15px;
-            overflow-x: auto;
-            padding-bottom: 20px;
-            /* 스크롤바 디자인 숨기기 */
-            -ms-overflow-style: none;
-            scrollbar-width: none;
         }
-        #recommendationList::-webkit-scrollbar { display: none; }
-
-        .place-card {
-            min-width: 280px;
-            background: white;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .place-card:hover { transform: translateY(-5px); }
-        .place-card h3 { margin: 0 0 5px 0; color: #333; }
-        
-        .congest-여유 { color: #21d5db; font-weight: bold; }
-        .congest-보통 { color: #28a745; font-weight: bold; }
-        .congest-약간붐빔 { color: #e5e214; font-weight: bold; };
     </style>
 </head>
-<body>
 
+<body>
     <div id="map"></div>
 
     <div class="ui-overlay">
-        
         <div class="search-container">
-            <h2>🗺️ 여유로운 핫플 찾기</h2>
-            <p style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">현재 위치 기반으로 덜 붐비는 곳을 추천합니다.</p>
-            
-            <label for="distanceSelect" style="font-size: 0.8rem;">검색 반경 설정</label>
-            <select id="distanceSelect">
-                <option value="1">1km 이내</option>
-                <option value="5" selected>5km 이내</option>
-                <option value="10">10km 이내</option>
-                <option value="20">20km 이내</option>
-                <option value="30">30km 이내</option>
-                <option value="40">40km 이내</option>
+            <label for="locationModeSelect" style="font-size: 0.8rem;">검색 방식 선택</label>
+            <select id="locationModeSelect">
+                <option value="auto" selected>현재 위치 사용</option>
+                <option value="manual">장소 검색</option>
             </select>
-            <select id="congestionSelect">
+
+            <div id="manualLocationRow" class="manual-location hidden">
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">검색 위치 주변 장소를 찾습니다.</p>
+                <label for="distanceSelect" style="font-size: 0.8rem;">검색</label>
+                <input id="manualLocationInput" type="text" inputmode="text" placeholder="주소/장소명">
+                <button id="manualLocationApplyBtn" type="button" class="recommend-btn">검색</button>
+            </div>
+            
+            
+            <div id="autoLocationFields">
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">현 위치 기반으로 장소를 찾습니다.</p>
+                <label for="distanceSelect" style="font-size: 0.8rem;">검색 반경 설정</label>
+                <select id="distanceSelect">
+                    <option value="1">1km 이내</option>
+                    <option value="5" selected>5km 이내</option>
+                    <option value="10">10km 이내</option>
+                    <option value="20">20km 이내</option>
+                    <option value="30">30km 이내</option>
+                    <option value="40">40km 이내</option>
+                </select>
+                <select id="congestionSelect">
                 <option value="여유" selected>여유로운 곳</option>
                 <option value="보통">보통인 곳</option>
                 <option value="약간 붐빔">약간 붐비는 곳</option>
-            </select>
-            <button id="recommendBtn">추천받기</button>
+                </select>
+                <button id="recommendBtn">추천받기</button>
+            </div>
+
+            
         </div>
+
+        
 
         <div id="recommendationList">
             </div>
-
     </div>
+
+    <div id="detailPanel" class="detail-panel hidden">
+        <div class="drag-handle"></div>
+        <div class="detail-header">
+            <h2 id="detailTitle">장소명 정보</h2>
+            <button id="closeDetailBtn" type="button">&times;</button>
+        </div>
+        <div class="detail-body">
+            <p id="detailCongestion">혼잡도: 로딩 중...</p>
+            <p id="detailDistance">거리: 계산 중...</p>
+            <div id="detailContent">상세 설명 및 콘텐츠가 여기에 들어갑니다.</div>
+        </div>
+    </div>
+
     <script type="module" src="/js/main.js"></script>
 </body>
 </html>

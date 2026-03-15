@@ -145,6 +145,7 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
     return R * c;
 };
 
+//유저 위치 받아서 위 서울 장소들 중에서 가까운곳 10개 받아서 혼잡도 필터링해서 리턴
 exports.getNearbyHotspots = async (req, res) => {
     try {
         // 프론트에서 보낸 유저의 위도, 경도
@@ -154,7 +155,7 @@ exports.getNearbyHotspots = async (req, res) => {
         if (!userLat || !userLng) {
             return res.status(400).json({ message: "위치 정보가 필요합니다." });
         }
-        
+
         const candidates = seoulHotspots
             .map(place => ({
                 ...place,
@@ -162,10 +163,7 @@ exports.getNearbyHotspots = async (req, res) => {
             }))
             .filter(place => place.distance <= limit) // 유저가 설정한 거리 내 장소만 필터링
             .sort((a, b) => a.distance - b.distance)  // 가까운 순 정렬
-            .slice(0, 10); // 성능을 위해 상위 10개 정도로 제한 (선택 사항)
-
-        console.log(`🔍 후보군 추출 완료: ${candidates.length}곳 (거리 기준)`);
-    
+            .slice(0, 10); // 성능을 위해 상위 10개 정도로 제한 (선택 사항)    
         if (candidates.length === 0) {
             return res.json({ count: 0, recommendations: [] });
         }
@@ -208,6 +206,64 @@ exports.getNearbyHotspots = async (req, res) => {
     }
 };
 
+//유저 위치 받아서 위 서울 장소들 중에서 가까운곳 10개 받아서 혼잡도 필터링해서 리턴
+exports.getSearchHotspots = async (req, res) => {
+    try {
+        // 프론트에서 보낸 유저의 위도, 경도
+        const { userLat, userLng} = req.query;
+        if (!userLat || !userLng) {
+            return res.status(400).json({ message: "위치 정보가 필요합니다." });
+        }
+
+        const candidates = seoulHotspots
+            .map(place => ({
+                ...place,
+                distance: getDistance(parseFloat(userLat), parseFloat(userLng), place.lat, place.lng)
+            }))
+            .filter(place => place.distance <= 40) // 유저가 설정한 거리 내 장소만 필터링
+            .sort((a, b) => a.distance - b.distance)  // 가까운 순 정렬
+            .slice(0, 10); // 성능을 위해 상위 10개 정도로 제한 (선택 사항)    
+        if (candidates.length === 0) {
+            return res.json({ count: 0, recommendations: [] });
+        }
+
+        // 2. 필터링된 후보들에 대해서만 API 요청 생성
+        const requests = candidates.map(place => 
+            axios.get(`http://openapi.seoul.go.kr:8088/${KEY}/json/citydata/1/1/${encodeURIComponent(place.name)}`)
+        );
+        const responses = await Promise.all(requests);
+        
+        // 데이터 정제 및 필터링
+        const filteredPlaces = responses
+            .map((resp, index) => {
+                const cityData = resp.data?.CITYDATA;
+                if (!cityData) return null;
+
+                const congestionInfo = cityData.LIVE_PPLTN_STTS?.[0] || {};
+                const distance = getDistance(parseFloat(userLat),parseFloat(userLng), candidates[index].lat, candidates[index].lng);
+
+                return {
+                    장소: cityData.AREA_NM,
+                    혼잡도: congestionInfo.AREA_CONGEST_LVL || "데이터 없음",
+                    상세메시지: congestionInfo.AREA_CONGEST_MSG || "",
+                    거리: distance.toFixed(2), // 소수점 2자리까지
+                    좌표: { lat: candidates[index].lat, lng: candidates[index].lng }
+                };
+            })
+            .filter(place => place !== null) 
+            .sort((a, b) => a.거리 - b.거리) // 가까운 순 정렬
+            .slice(0, 10); // 상위 10개 선정
+
+        res.json({
+            count: filteredPlaces.length,
+            recommendations: filteredPlaces
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("추천 장소 조회 중 에러 발생");
+    }
+};
 
 // 1. 개별 장소 혼잡도 확인 로직
 exports.getHotspotInfo = async (req, res) => {
@@ -251,3 +307,8 @@ exports.apitest = async (req, res) => {
     }  
 }
 
+// 카카오 api 테스트용
+exports.kakaoapitest = async (req, res) => {
+    
+    res.json( kakao.maps.services.Status.OK );
+}

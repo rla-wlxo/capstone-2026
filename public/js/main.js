@@ -1,10 +1,24 @@
-import { initMap, findNearbyHotspot } from './map.js';
+import { initMap } from './renderMap.js';
+import {findNearbyHotspot, setupLocationControls} from './findPlace.js'; 
+import { initHorizontalScroll } from './utils/horizontalScroll.js';
 
 window.onload = () => {
     initMap();
+    setupLocationControls();
+    initHorizontalScroll();
+
+
     const recommendBtn = document.getElementById('recommendBtn');
+    const closeBtn = document.getElementById('closeDetailBtn');
+    const panel = document.getElementById('detailPanel');
+
     if (recommendBtn) {
-        // .onclick 보다는 addEventListener를 더 권장합니다 (모듈 환경 안전성)
         recommendBtn.addEventListener('click', findNearbyHotspot);
     }
+   
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+        panel.classList.add('hidden');
+    };
+}
 };
