@@ -243,3 +243,81 @@
     display: flex;
     flex-direction: column;
 }
+/* 상세 패널 내부 스타일 보완 */
+
+/* 1. 탭 콘텐츠 제어: active 클래스가 없으면 숨김 */
+.tab-content {
+    display: none; 
+    padding: 15px 0;
+    font-size: 0.95rem;
+    color: #444;
+}
+
+.tab-content.active {
+    display: block; /* active 클래스가 붙은 탭만 표시 */
+}
+
+/* 2. 액션 버튼 그리드 (길찾기, 저장 등) */
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 15px 0;
+}
+
+.action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    border: none;
+    background-color: #f0f2f5;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.action-btn:hover {
+    background-color: #e4e6e9;
+    transform: translateY(-2px);
+}
+
+.action-btn span {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #333;
+}
+
+/* 3. 탭 버튼 스타일 */
+.detail-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid #eee;
+    margin-top: 10px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #888;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.tab-btn.active {
+    color: #4A7DFF;
+    font-weight: bold;
+    border-bottom: 2px solid #4A7DFF;
+}
+
+/* 상세 정보 텍스트 정렬 */
+.detail-body p {
+    margin: 8px 0;
+    line-height: 1.4;
+}

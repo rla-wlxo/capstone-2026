@@ -52,7 +52,7 @@
             
             
             <div id="autoLocationFields">
-                <p style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">현 위치 기반으로 장소를 찾습니다.</p>
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">현 위치 기반 장소를 찾습니다.</p>
                 <label for="distanceSelect" style="font-size: 0.8rem;">검색 반경 설정</label>
                 <select id="distanceSelect">
                     <option value="1">1km 이내</option>
@@ -85,13 +85,45 @@
             <h2 id="detailTitle">장소명 정보</h2>
             <button id="closeDetailBtn" type="button">&times;</button>
         </div>
+        
         <div class="detail-body">
-            <p id="detailCongestion">혼잡도: 로딩 중...</p>
-            <p id="detailDistance">거리: 계산 중...</p>
-            <div id="detailContent">상세 설명 및 콘텐츠가 여기에 들어갑니다.</div>
+            <div style="margin-bottom: 15px;">
+                <p id="detailCongestion" style="font-weight: bold; margin: 5px 0;">혼잡도: 로딩 중...</p>
+                <p id="detailDistance" style="color: #666; margin: 5px 0;">거리: 계산 중...</p>
+            </div>
+
+            <div class="action-grid">
+                <button class="action-btn" id="findRouteBtn">📍 <span>길찾기</span></button>
+                <button class="action-btn" id="savePlaceBtn">⭐ <span>장소 저장</span></button>
+                <button class="action-btn" id="boardTabBtn">📝 <span>게시판 수정필요</span></button>
+            </div>
+
+            <hr style="border: 0; height: 1px; background: #eee; margin: 20px 0;">
+
+            <div class="detail-tabs">
+                <button class="tab-btn active" data-target="tab-recommend">주변 추천</button>
+                <button class="tab-btn" data-target="tab-board">게시판</button>
+            </div>
+
+            <div id="tab-recommend" class="tab-content active">
+                <div id="detailNearbyList">주변의 다른 추천 장소들이 여기에 표시됩니다.</div>
+            </div>
+            
+            <div id="tab-board" class="tab-content">
+                <div id="detailBoardContent">이 장소에 대한 방문자 리뷰 및 게시글이 표시됩니다.</div>
+            </div>
         </div>
     </div>
 
     <script type="module" src="/js/main.js"></script>
+    <script>
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.target).classList.add('active');
+            });
+        });
+    </script>
 </body>
 </html>
